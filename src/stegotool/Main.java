@@ -1,3 +1,5 @@
+package stegotool;
+
 /**
  *
  * @author holzmanj
