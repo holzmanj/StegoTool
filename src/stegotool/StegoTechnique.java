@@ -2,6 +2,7 @@ package stegotool;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
 /**
  *
@@ -19,18 +20,18 @@ public interface StegoTechnique {
     /**
      * Embeds a file within a vessel image.
      * @param messageFile The file to be hidden inside the image.
-     * @param vesselImage The cover image which will hold the hidden file.
+     * @param imgInput The cover image which will hold the hidden file.
      * @return The vessel image that has been manipulated to contain the file.
      * Returns null on failure.
      */
-    BufferedImage insertFile(File messageFile, BufferedImage vesselImage);
+    BufferedImage insertFile(File messageFile, BufferedImage imgInput) throws IOException;
     
     /**
      * Extracts a hidden file from a vessel image.
-     * @param vesselImage An image which contains a hidden file embedded within it.
+     * @param img An image which contains a hidden file embedded within it.
      * @return The file that is extracted from the given image.
      * Returns null on failure.
      */
-    File extractFile(BufferedImage vesselImage);
+    File extractFile(BufferedImage img);
     
 }
