@@ -81,8 +81,8 @@ public class LSBTechnique implements StegoTechnique {
     }
 
     @Override
-    public File extractFile(BufferedImage vesselImage) {
-        return null;
+    public void extractFile(BufferedImage vesselImage, File outputFile) {
+        
     }
     
 }

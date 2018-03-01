@@ -29,9 +29,8 @@ public interface StegoTechnique {
     /**
      * Extracts a hidden file from a vessel image.
      * @param img An image which contains a hidden file embedded within it.
-     * @return The file that is extracted from the given image.
-     * Returns null on failure.
+     * @param outputFile The file that is extracted from the given image.
      */
-    File extractFile(BufferedImage img);
+    void extractFile(BufferedImage img, File outputFile);
     
 }

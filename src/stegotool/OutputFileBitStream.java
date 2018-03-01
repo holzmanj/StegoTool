@@ -17,15 +17,13 @@ public class OutputFileBitStream {
     private int currentByte;
     private int bitsShifted;
     
-    private File output;
-    
-    public OutputFileBitStream(int bitsPerByte)
+    public OutputFileBitStream(int bitsPerByte, File file)
             throws FileNotFoundException {
         BITS_PER_BYTE = bitsPerByte;
         currentByte = 0;
         bitsShifted = 0;
         
-        fileStream = new FileOutputStream(output);
+        fileStream = new FileOutputStream(file);
         
         // initialize mask
         int mask = 0;
@@ -47,13 +45,12 @@ public class OutputFileBitStream {
         currentByte = currentByte << BITS_PER_BYTE;
     }
     
-    public File getFile() throws IOException {
+    public void closeFile() throws IOException {
         while(bitsShifted > 0 && currentByte != 0) {
             write(0);
         }
         
         fileStream.close();
-        return output;
     }
     
 }
