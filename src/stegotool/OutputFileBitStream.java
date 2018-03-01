@@ -41,8 +41,9 @@ public class OutputFileBitStream {
             bitsShifted = 0;
         }
         
-        currentByte |= (bits & bitMask);
         currentByte = currentByte << BITS_PER_BYTE;
+        currentByte |= (bits & bitMask);
+        bitsShifted += BITS_PER_BYTE; 
     }
     
     public void closeFile() throws IOException {

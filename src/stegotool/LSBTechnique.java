@@ -3,7 +3,10 @@ package stegotool;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -58,7 +61,6 @@ public class LSBTechnique implements StegoTechnique {
  
         bitStream = new InputFileBitStream(messageFile, BITS_PER_BYTE);
         
-        int b = 0;
         Color pixel;
         int pixelRGB[] = {0, 0, 0};
         for(int x = 0; x < imgInput.getWidth(); x++) {
@@ -81,8 +83,24 @@ public class LSBTechnique implements StegoTechnique {
     }
 
     @Override
-    public void extractFile(BufferedImage vesselImage, File outputFile) {
+    public void extractFile(BufferedImage vesselImage, File outputFile) 
+            throws FileNotFoundException, IOException {
         
+        OutputFileBitStream bitStream = new OutputFileBitStream(BITS_PER_BYTE, outputFile);
+        
+        Color pixel;
+        for(int x = 0; x < vesselImage.getWidth(); x++) {
+            for(int y = 0; y < vesselImage.getHeight(); y++) {
+                // get pixel values from image
+                pixel = new Color(vesselImage.getRGB(x, y));
+                
+                // get least significant bits and write them to file
+                bitStream.write(pixel.getRed()   & mask);
+                bitStream.write(pixel.getGreen() & mask);
+                bitStream.write(pixel.getBlue()  & mask);
+            }
+        }
+        bitStream.closeFile();
     }
     
 }

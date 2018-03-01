@@ -15,14 +15,16 @@ public class InputFileBitStream {
     private final int bitMask;
     private final int BITS_PER_BYTE;
     private int loadedByte;
-    private int bitsShifted;
+    private int shift;
     
     public InputFileBitStream(File file, int bitsPerByte) 
            throws FileNotFoundException, IOException {
         fileStream = new FileInputStream(file);
         loadedByte = fileStream.read();
-        bitsShifted = 0;
         BITS_PER_BYTE = bitsPerByte;
+        shift = 8 - BITS_PER_BYTE;
+        
+        System.out.println(Integer.toBinaryString(loadedByte));
         
         // initialize mask
         int mask = 0;
@@ -38,18 +40,18 @@ public class InputFileBitStream {
      */
     public int read() throws IOException {
         
-        if(bitsShifted >= 8) {
+        if(shift < 0) {
             loadedByte = fileStream.read();
-            bitsShifted = 0;
+            shift = 8 - BITS_PER_BYTE;
         }
         if(loadedByte == -1) {
             return 0;
         }
         
-        int bits = loadedByte & bitMask;
-        loadedByte = loadedByte >> BITS_PER_BYTE;
-        bitsShifted += BITS_PER_BYTE;
+        int bits = (loadedByte >> shift) & bitMask;
+        shift -= BITS_PER_BYTE;
         
+        System.out.print(Integer.toBinaryString(bits) + " ");
         return bits;
     }
     

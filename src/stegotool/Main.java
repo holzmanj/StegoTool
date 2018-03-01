@@ -35,7 +35,7 @@ public class Main {
         File imgFile = new File("res/output.png");
         BufferedImage img = ImageIO.read(imgFile);
         
-        File msgFile = new File("extract.txt");
+        File msgFile = new File("res/extract.txt");
                 
         t.extractFile(img, msgFile);
         
