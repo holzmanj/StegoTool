@@ -10,14 +10,14 @@ import java.io.InputStream;
  *
  * @author jesse
  */
-public class FileBitStream {
+public class InputFileBitStream {
     private final InputStream fileStream;
     private final int bitMask;
     private final int BITS_PER_BYTE;
     private int loadedByte;
     private int bitsShifted;
     
-    public FileBitStream(File file, int bitsPerByte) 
+    public InputFileBitStream(File file, int bitsPerByte) 
            throws FileNotFoundException, IOException {
         fileStream = new FileInputStream(file);
         loadedByte = fileStream.read();

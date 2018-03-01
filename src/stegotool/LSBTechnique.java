@@ -3,10 +3,7 @@ package stegotool;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  *
@@ -39,7 +36,7 @@ public class LSBTechnique implements StegoTechnique {
     public BufferedImage insertFile(File messageFile, BufferedImage imgInput)
             throws IOException {
         BufferedImage imgOutput;
-        FileBitStream bitStream;
+        InputFileBitStream bitStream;
         
         if(imgInput == null) {
             System.err.println("ABORT: Input image is null.");
@@ -59,7 +56,7 @@ public class LSBTechnique implements StegoTechnique {
                 imgInput.getHeight(),
                 imgInput.getType());
  
-        bitStream = new FileBitStream(messageFile, BITS_PER_BYTE);
+        bitStream = new InputFileBitStream(messageFile, BITS_PER_BYTE);
         
         int b = 0;
         Color pixel;
