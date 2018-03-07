@@ -20,7 +20,7 @@ public class OutputFileBitStream {
     private int reservedBytesWritten;
     private int fileSize;
     private int fileBytesWritten;
-    private boolean doneExtracting;
+    private boolean doneWriting;
     
     public OutputFileBitStream(int bitsPerCluster, File file)
             throws FileNotFoundException {
@@ -31,7 +31,7 @@ public class OutputFileBitStream {
         fileStream = new FileOutputStream(file);
         fileBytesWritten = 0;
         
-        doneExtracting = false;
+        doneWriting = false;
         
         // initialize mask
         int mask = 0;
@@ -71,13 +71,13 @@ public class OutputFileBitStream {
                     }
                 }
             } else {
-                if(doneExtracting) return;
+                if(doneWriting) return;
                 
                 fileStream.write(currentByte);
                 fileBytesWritten++;
                 
                 if(fileBytesWritten >= fileSize) {
-                    doneExtracting = true;
+                    doneWriting = true;
                 }
             }
             currentByte = 0;
@@ -93,10 +93,10 @@ public class OutputFileBitStream {
      * Returns whether or not the number of bytes written to the file has met
      * the number of bytes specified as the file size (no more writing is taking
      * place).
-     * @return Boolean indicating if stream is done extracting.
+     * @return Boolean indicating if stream is done writing.
      */
-    public boolean isDoneExtracting() {
-        return doneExtracting;
+    public boolean isDoneWriting() {
+        return doneWriting;
     }
     
     /**

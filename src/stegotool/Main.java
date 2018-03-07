@@ -18,7 +18,6 @@ public class Main {
         
         t = new LSBTechnique();
         
-        /*
         File imgFile = new File("res/garden.png");
         BufferedImage img = ImageIO.read(imgFile);
         BufferedImage out;
@@ -30,8 +29,8 @@ public class Main {
         
         File outFile = new File("res/output.png");
         ImageIO.write(out, "png", outFile);
-        */
         
+        /*
         
         File imgFile = new File("res/output.png");
         BufferedImage img = ImageIO.read(imgFile);
@@ -40,7 +39,7 @@ public class Main {
                 
         t.extractFile(img, msgFile);
         
-
+*/
     }
     
 }

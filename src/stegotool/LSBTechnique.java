@@ -109,20 +109,23 @@ public class LSBTechnique implements StegoTechnique {
         int pixelRGB[] = {0, 0, 0};
         for(int x = 0; x < imgInput.getWidth(); x++) {
             for(int y = 0; y < imgInput.getHeight(); y++) {
-                // get pixel values from input image
-                pixel = new Color(imgInput.getRGB(x, y));
+                if(bitStream.isDoneReading()) {
+                    imgOutput.setRGB(x, y, imgInput.getRGB(x, y));
+                } else {
+                    // get pixel values from input image
+                    pixel = new Color(imgInput.getRGB(x, y));
                 
-                // insert file data into pixel values
-                pixelRGB[0] = (pixel.getRed()   & ~mask) | bitStream.read();
-                pixelRGB[1] = (pixel.getGreen() & ~mask) | bitStream.read();
-                pixelRGB[2] = (pixel.getBlue()  & ~mask) | bitStream.read();
+                    // insert file data into pixel values
+                    pixelRGB[0] = (pixel.getRed()   & ~mask) | bitStream.read();
+                    pixelRGB[1] = (pixel.getGreen() & ~mask) | bitStream.read();
+                    pixelRGB[2] = (pixel.getBlue()  & ~mask) | bitStream.read();
                 
-                // set new pixel value in output image
-                pixel = new Color(pixelRGB[0], pixelRGB[1], pixelRGB[2]);
-                imgOutput.setRGB(x, y, pixel.getRGB());
+                    // set new pixel value in output image
+                    pixel = new Color(pixelRGB[0], pixelRGB[1], pixelRGB[2]);
+                    imgOutput.setRGB(x, y, pixel.getRGB());
+                }
             }
         }
-        
         return imgOutput;
     }
 
@@ -146,7 +149,7 @@ public class LSBTechnique implements StegoTechnique {
                 bitStream.write(pixel.getGreen() & mask);
                 bitStream.write(pixel.getBlue()  & mask);
                 
-                if(bitStream.isDoneExtracting()) {
+                if(bitStream.isDoneWriting()) {
                     bitStream.closeFile();
                     return;
                 }

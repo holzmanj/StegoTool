@@ -18,6 +18,7 @@ public class InputFileBitStream {
     private int[] reservedBytes;
     private int loadedByte;
     private int shift;
+    private boolean doneReading;
     
     public InputFileBitStream(File file, int bitsPerCluster) 
            throws FileNotFoundException, IOException {
@@ -58,14 +59,22 @@ public class InputFileBitStream {
             shift = 8 - BITS_PER_CLUSTER;
         }
         if(loadedByte == -1) {
+            doneReading = true;
             return 0;
         }
         
         int bitCluster = (loadedByte >> shift) & bitMask;
         shift -= BITS_PER_CLUSTER;
-        
-        System.out.print(Integer.toBinaryString(bitCluster) + " ");
+
         return bitCluster;
+    }
+    
+    /**
+     * Returns whether or not all bytes have been read from the file.
+     * @return Boolean indicating whether or not stream is done reading.
+     */
+    public boolean isDoneReading() {
+        return doneReading;
     }
     
 }
