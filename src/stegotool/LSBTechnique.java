@@ -26,6 +26,47 @@ public class LSBTechnique implements StegoTechnique {
         this.mask = mask;
     }
     
+    /**
+     * Calculates the number of bytes needed to hold the number of encodable
+     * bytes in the image.
+     * @param img Image to analyze.
+     * @return Number of bytes.
+     */
+    private int getNumBytesForCapacity(BufferedImage img) {
+        int capacity = getImageCapacity(img);
+        
+        // calculate number of bytes needed
+        int byteCount = 1;
+        while(Math.pow(2.0, 8.0 * byteCount) < capacity) {
+            byteCount++;
+        }
+        
+        return byteCount;
+    }
+    
+    /**
+     * Seperates size of file into byte array where the number of bytes is the 
+     * minimum needed to hold the full capacity of the image.
+     * @param file Message file.
+     * @param img Vessel image.
+     * @return Byte array containing file size.
+     */
+    private int[] getReservedBytesForFileSize(File file, BufferedImage img) {
+        int fileSize = (int) file.length();
+        int fileSizeBytes[];
+
+        fileSizeBytes = new int[getNumBytesForCapacity(img)];
+        
+        // split file size into seperate bytes
+        int shiftCount;
+        for(int i = 0; i < fileSizeBytes.length; i++) {
+            shiftCount = 8 * (fileSizeBytes.length - (i + 1));
+            fileSizeBytes[i] = (fileSize >> shiftCount) & 0xFF;
+        }
+        
+        return fileSizeBytes;
+    }
+    
     @Override
     public int getImageCapacity(BufferedImage img) {
         int colorChannels = img.getRaster().getNumDataElements();
@@ -61,6 +102,9 @@ public class LSBTechnique implements StegoTechnique {
  
         bitStream = new InputFileBitStream(messageFile, BITS_PER_BYTE);
         
+        bitStream.setReservedBytes(
+                getReservedBytesForFileSize(messageFile, imgInput));
+        
         Color pixel;
         int pixelRGB[] = {0, 0, 0};
         for(int x = 0; x < imgInput.getWidth(); x++) {
@@ -88,6 +132,9 @@ public class LSBTechnique implements StegoTechnique {
         
         OutputFileBitStream bitStream = new OutputFileBitStream(BITS_PER_BYTE, outputFile);
         
+        // reserve bytes for file size
+        bitStream.reserveBytes(getNumBytesForCapacity(vesselImage));
+        
         Color pixel;
         for(int x = 0; x < vesselImage.getWidth(); x++) {
             for(int y = 0; y < vesselImage.getHeight(); y++) {
@@ -98,6 +145,11 @@ public class LSBTechnique implements StegoTechnique {
                 bitStream.write(pixel.getRed()   & mask);
                 bitStream.write(pixel.getGreen() & mask);
                 bitStream.write(pixel.getBlue()  & mask);
+                
+                if(bitStream.isDoneExtracting()) {
+                    bitStream.closeFile();
+                    return;
+                }
             }
         }
         bitStream.closeFile();

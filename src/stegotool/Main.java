@@ -32,6 +32,7 @@ public class Main {
         ImageIO.write(out, "png", outFile);
         */
         
+        
         File imgFile = new File("res/output.png");
         BufferedImage img = ImageIO.read(imgFile);
         
