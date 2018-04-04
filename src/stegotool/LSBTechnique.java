@@ -5,8 +5,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -91,7 +89,7 @@ public class LSBTechnique implements StegoTechnique {
             return null;
         } else
         if(getImageCapacity(imgInput) < messageFile.length()) {
-            System.err.println("ABORT: Message file is null.");
+            System.err.println("ABORT: Message file is too large for image.");
             return null;
         }
         
