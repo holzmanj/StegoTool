@@ -5,4 +5,5 @@ Things to implement:
 - [x] LSB technique
 - [ ] Parallel LSB technique using omp4j
 - [ ] BPCS Technique
+- [ ] Parallel BPCS Technique
 - [ ] GUI
