@@ -11,7 +11,7 @@ import java.io.IOException;
  * @author jesse
  */
 public class LSBTechnique implements StegoTechnique {
-    private final int BITS_PER_BYTE = 2;    // TODO replace constant with read value from config file.
+    private final int BITS_PER_BYTE = 2;
 
     private final int mask;
     
@@ -43,8 +43,10 @@ public class LSBTechnique implements StegoTechnique {
     }
     
     /**
-     * Seperates size of file into byte array where the number of bytes is the 
-     * minimum needed to hold the full capacity of the image.
+     * Generates a byte array large enough to hold the full capacity of
+     * the image and stores the size of the message file accross the
+     * bytes in the array.
+     * These bytes are prepended to the message file during insertion.
      * @param file Message file.
      * @param img Vessel image.
      * @return Byte array containing file size.
