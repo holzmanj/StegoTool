@@ -1,9 +1,8 @@
 # Stego Tool
 
 Things to implement:
-- [x] Base framework
 - [x] LSB technique
-- [ ] Parallel LSB technique using omp4j
+- [ ] Parallelization for LSB
 - [ ] BPCS Technique
-- [ ] Parallel BPCS Technique
-- [ ] GUI
+- [ ] Parallelization for BPCS
+- [x] GUI
