@@ -67,46 +67,26 @@ public class LSBTechnique implements StegoTechnique {
         return fileSizeBytes;
     }
     
-    @Override
-    public int getImageCapacity(BufferedImage img) {
-        int colorChannels = img.getRaster().getNumDataElements();
-        int width = img.getWidth();
-        int height = img.getHeight();
+    /**
+     * Inserts data in a way that is compatible with single-threaded
+     * and multithreaded schemas.  Does not add metadata.
+     * @param bitStream Initialized input stream
+     * @param imgInput Vessel image for carrying data
+     * @return Image encoded with message data
+     * @throws IOException 
+     */
+    public BufferedImage insertRawData(InputFileBitStream bitStream, 
+            BufferedImage imgInput) throws IOException {
+        BufferedImage imgOutput = new BufferedImage(imgInput.getWidth(), 
+                imgInput.getHeight(), imgInput.getType());
+        Color pixel;
+        int pixelRGB[] = {0, 0, 0};
         
-        return (width * height * colorChannels * BITS_PER_BYTE) / 8;
-    }
-
-    @Override
-    public BufferedImage insertFile(File messageFile, BufferedImage imgInput)
-            throws IOException {
-        BufferedImage imgOutput;
-        InputFileBitStream bitStream;
-        
-        if(imgInput == null) {
-            System.err.println("ABORT: Input image is null.");
-            return null;
-        } else
-        if(messageFile == null) {
-            System.err.println("ABORT: Message file is null.");
-            return null;
-        } else
-        if(getImageCapacity(imgInput) < messageFile.length()) {
-            System.err.println("ABORT: Message file is too large for image.");
+        if(bitStream == null) {
+            System.err.println("ABORT: Input bit stream is null");
             return null;
         }
         
-        imgOutput = new BufferedImage(
-                imgInput.getWidth(), 
-                imgInput.getHeight(),
-                imgInput.getType());
- 
-        bitStream = new InputFileBitStream(messageFile, BITS_PER_BYTE);
-        
-        bitStream.setReservedBytes(
-                getReservedBytesForFileSize(messageFile, imgInput));
-        
-        Color pixel;
-        int pixelRGB[] = {0, 0, 0};
         for(int x = 0; x < imgInput.getWidth(); x++) {
             for(int y = 0; y < imgInput.getHeight(); y++) {
                 if(bitStream.isDoneReading()) {
@@ -127,6 +107,41 @@ public class LSBTechnique implements StegoTechnique {
             }
         }
         return imgOutput;
+    }
+    
+    @Override
+    public int getImageCapacity(BufferedImage img) {
+        int colorChannels = img.getRaster().getNumDataElements();
+        int width = img.getWidth();
+        int height = img.getHeight();
+        
+        return (width * height * colorChannels * BITS_PER_BYTE) / 8;
+    }
+
+    @Override
+    public BufferedImage insertFile(File messageFile, BufferedImage imgInput)
+            throws IOException {
+        InputFileBitStream bitStream;
+        
+        if(imgInput == null) {
+            System.err.println("ABORT: Input image is null.");
+            return null;
+        } else
+        if(messageFile == null) {
+            System.err.println("ABORT: Message file is null.");
+            return null;
+        } else
+        if(getImageCapacity(imgInput) < messageFile.length()) {
+            System.err.println("ABORT: Message file is too large for image.");
+            return null;
+        }
+ 
+        bitStream = new InputFileBitStream(messageFile, BITS_PER_BYTE);
+        
+        bitStream.setReservedBytes(
+                getReservedBytesForFileSize(messageFile, imgInput));
+        
+        return insertRawData(bitStream, imgInput);
     }
 
     @Override
