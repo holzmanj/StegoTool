@@ -30,7 +30,7 @@ public class LSBTechnique implements StegoTechnique {
      * @param img Image to analyze.
      * @return Number of bytes.
      */
-    private int getNumBytesForCapacity(BufferedImage img) {
+    public int getNumBytesForCapacity(BufferedImage img) {
         int capacity = getImageCapacity(img);
         
         // calculate number of bytes needed
@@ -51,7 +51,7 @@ public class LSBTechnique implements StegoTechnique {
      * @param img Vessel image.
      * @return Byte array containing file size.
      */
-    private int[] getReservedBytesForFileSize(File file, BufferedImage img) {
+    public int[] getReservedBytesForFileSize(File file, BufferedImage img) {
         int fileSize = (int) file.length();
         int fileSizeBytes[];
 
