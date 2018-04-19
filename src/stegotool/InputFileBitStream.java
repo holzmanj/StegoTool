@@ -25,6 +25,7 @@ public class InputFileBitStream {
         fileStream = new FileInputStream(file);
         BITS_PER_CLUSTER = bitsPerCluster;
         shift = -1;
+        reservedBytes = new int[0];
         
         // initialize mask
         int mask = 0;
