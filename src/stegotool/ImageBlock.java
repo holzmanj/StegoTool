@@ -70,6 +70,20 @@ public class ImageBlock {
     }
     
     /**
+     * Replaces a specified bit plane with a given array of 8 bytes.
+     * @param colorChannel Index of the color channel of the bit plane.
+     * @param bitLevel Index of the bit level of the bit plane.
+     * @param bitPlane Array of 8 bytes to replace the bit plane.
+     */
+    public void replaceBitPlane(int colorChannel, int bitLevel, byte[] bitPlane) {
+        if(bitPlane.length != 8) {
+            System.err.println("Invalid bit plane size.");
+            return;
+        }
+        bitPlanes[colorChannel][bitLevel] = bitPlane;
+    }
+    
+    /**
      * Converts the bit planes back into a BufferedImage.
      * @return 8x8 image
      */
