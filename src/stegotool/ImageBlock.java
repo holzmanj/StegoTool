@@ -60,6 +60,16 @@ public class ImageBlock {
     }
     
     /**
+     * Gets specific bit plane from the 8x8 image.
+     * @param colorChannel Index of the color channel of the bit plane.
+     * @param bitLevel Index of the bit level of the bit plane.
+     * @return 8x8 bit plane as an array of 8 bytes.
+     */
+    public byte[] getBitPlane(int colorChannel, int bitLevel) {
+        return bitPlanes[colorChannel][bitLevel];
+    }
+    
+    /**
      * Converts the bit planes back into a BufferedImage.
      * @return 8x8 image
      */
