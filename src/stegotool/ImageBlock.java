@@ -66,7 +66,7 @@ public class ImageBlock {
      * @return 8x8 bit plane as an array of 8 bytes.
      */
     public byte[] getBitPlane(int colorChannel, int bitLevel) {
-        return bitPlanes[colorChannel][bitLevel];
+        return bitPlanes[colorChannel][bitLevel].clone();
     }
     
     /**
@@ -80,7 +80,7 @@ public class ImageBlock {
             System.err.println("Invalid bit plane size.");
             return;
         }
-        bitPlanes[colorChannel][bitLevel] = bitPlane;
+        bitPlanes[colorChannel][bitLevel] = bitPlane.clone();
     }
     
     /**
