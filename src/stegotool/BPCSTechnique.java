@@ -81,6 +81,59 @@ public class BPCSTechnique implements StegoTechnique {
         return (double) sum / 112.0;
     }
     
+    /**
+     * Converts a Pure Binary Code (normal) image to the Canonical Grey
+     * Code format for BPCS operations.
+     * @param pbcImg Image in PBC format
+     * @return Image in CGC format
+     */
+    public BufferedImage PBCToCGC(BufferedImage pbcImg) {
+        BufferedImage cgcImg = new BufferedImage(pbcImg.getWidth(),
+                pbcImg.getHeight(), pbcImg.getType());
+        int b0, b1;
+        // copy first column of pixels from PBC to CGC
+        for(int y = 0; y < pbcImg.getHeight(); y++) {
+            cgcImg.setRGB(0, y, pbcImg.getRGB(0, y));
+        }
+        // get the rest of the pixel columns through XOR operations
+        for(int x = 1; x < pbcImg.getWidth(); x++) {
+            for(int y = 0; y < pbcImg.getHeight(); y++) {
+                for(int c = 0; c < pbcImg.getColorModel().getNumColorComponents(); c++) {
+                    b0 = pbcImg.getRGB(x - 1, y);
+                    b1 = pbcImg.getRGB(x, y);
+                    cgcImg.setRGB(x, y, b0 ^ b1);
+                }
+            }
+        }
+        return cgcImg;
+    }
+    
+    /**
+     * Converts a Canonical Grey Code image back to Pure Binary Code.
+     * @param cgcImg Image in CGC format
+     * @return Image in PBC format
+     */
+    public BufferedImage CGCToPBC(BufferedImage cgcImg) {
+        BufferedImage pbcImg = new BufferedImage(cgcImg.getWidth(),
+                cgcImg.getHeight(), cgcImg.getType());
+        int g, b;
+        // copy first column of pixels from PBC to CGC
+        for(int y = 0; y < cgcImg.getHeight(); y++) {
+            pbcImg.setRGB(0, y, cgcImg.getRGB(0, y));
+        }
+        // get the rest of the pixel columns through XOR operations
+        for(int x = 1; x < cgcImg.getWidth(); x++) {
+            for(int y = 0; y < cgcImg.getHeight(); y++) {
+                for(int c = 0; c < cgcImg.getColorModel().getNumColorComponents(); c++) {
+                    g = cgcImg.getRGB(x, y);
+                    b = pbcImg.getRGB(x - 1, y);
+                    pbcImg.setRGB(x, y, g ^ b);
+                }
+            }
+        }
+        return pbcImg;
+    }
+    
     private byte[] conjugatePlane(byte[] bitPlane) {
         if(bitPlane.length != 8) return null;
         byte[] output = new byte[8];
