@@ -54,7 +54,27 @@ public class BPCSTechnique implements StegoTechnique {
 
     @Override
     public int getImageCapacity(BufferedImage img) {
-        return 0;
+        if(img == null) return 0;
+        
+        ImageBlock[][] imgBlocks = imageToBlocks(img);
+        int colorChannels = img.getColorModel().getNumColorComponents();
+        int eligiblePlanes = 0;
+        double complexity;
+        
+        for(int x = 0; x < imgBlocks.length; x++) {
+            for(int y = 0; y < imgBlocks[0].length; y++) {
+                for(int c = 0; c < colorChannels; c++) {
+                    for(int bit = 0; bit < 8; bit++) {
+                        complexity = calculateComplexity(
+                                imgBlocks[x][y].getBitPlane(c, bit));
+                        if(complexity >= COMPLEXITY_THRESHOLD) {
+                            eligiblePlanes++;
+                        }
+                    }
+                }
+            }
+        }
+        return eligiblePlanes * 8;
     }
 
     @Override
