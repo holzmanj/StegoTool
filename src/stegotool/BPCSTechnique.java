@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
@@ -17,7 +18,7 @@ import java.io.IOException;
  * @author jesse
  */
 public class BPCSTechnique implements StegoTechnique {
-    private final double COMPLEXITY_THRESHOLD = 0.5;
+    private final double COMPLEXITY_THRESHOLD = 0.5;    // must be <= 0.5
     
     public BPCSTechnique() {
     }
@@ -87,7 +88,7 @@ public class BPCSTechnique implements StegoTechnique {
      * @param pbcImg Image in PBC format
      * @return Image in CGC format
      */
-    public BufferedImage PBCToCGC(BufferedImage pbcImg) {
+    private BufferedImage PBCToCGC(BufferedImage pbcImg) {
         BufferedImage cgcImg = new BufferedImage(pbcImg.getWidth(),
                 pbcImg.getHeight(), pbcImg.getType());
         int b0, b1;
@@ -113,11 +114,11 @@ public class BPCSTechnique implements StegoTechnique {
      * @param cgcImg Image in CGC format
      * @return Image in PBC format
      */
-    public BufferedImage CGCToPBC(BufferedImage cgcImg) {
+    private BufferedImage CGCToPBC(BufferedImage cgcImg) {
         BufferedImage pbcImg = new BufferedImage(cgcImg.getWidth(),
                 cgcImg.getHeight(), cgcImg.getType());
         int g, b;
-        // copy first column of pixels from PBC to CGC
+        // copy first column of pixels from CGC to PBC
         for(int y = 0; y < cgcImg.getHeight(); y++) {
             pbcImg.setRGB(0, y, cgcImg.getRGB(0, y));
         }
@@ -134,6 +135,11 @@ public class BPCSTechnique implements StegoTechnique {
         return pbcImg;
     }
     
+    /**
+     * Flips the complexity of a bit plane by XORing it with a checkerboard.
+     * @param bitPlane Original bit plane
+     * @return Conjugated bit plane
+     */
     private byte[] conjugatePlane(byte[] bitPlane) {
         if(bitPlane.length != 8) return null;
         byte[] output = new byte[8];
@@ -147,10 +153,52 @@ public class BPCSTechnique implements StegoTechnique {
         return output;
     }
     
+    /**
+     * Calculates the number of bytes needed to hold the number of encodable
+     * bytes in the image.
+     * @param capacity Total capacity of image in bytes.
+     * @return Number of bytes.
+     */
+    private int getNumBytesForCapacity(int capacity) {
+        // calculate number of bytes needed
+        int byteCount = 1;
+        while(Math.pow(2.0, 8.0 * byteCount) < capacity) {
+            byteCount++;
+        }
+        
+        return byteCount;
+    }
+    
+    /**
+     * Generates a byte array large enough to hold the full capacity of
+     * the image and stores the size of the message file accross the
+     * bytes in the array.
+     * These bytes are prepended to the message file during insertion.
+     * @param file Message file.
+     * @param imageCapacity Total capacity of image in bytes.
+     * @return Byte array containing file size.
+     */
+    private byte[] getReservedBytesForFileSize(File file, int imageCapacity) {
+        int fileSize = (int) file.length();
+        byte fileSizeBytes[];
+
+        fileSizeBytes = new byte[getNumBytesForCapacity(imageCapacity)];
+        
+        // split file size into seperate bytes
+        int shiftCount;
+        for(int i = 0; i < fileSizeBytes.length; i++) {
+            shiftCount = 8 * (fileSizeBytes.length - (i + 1));
+            fileSizeBytes[i] = (byte) ((fileSize >> shiftCount) & 0xFF);
+        }
+        
+        return fileSizeBytes;
+    }
+    
     @Override
     public int getImageCapacity(BufferedImage img) {
         if(img == null) return 0;
         
+        //BufferedImage cgcImg = PBCToCGC(img);
         ImageBlock[][] imgBlocks = imageToBlocks(img);
         int colorChannels = img.getColorModel().getNumColorComponents();
         int eligiblePlanes = 0;
@@ -183,12 +231,10 @@ public class BPCSTechnique implements StegoTechnique {
         if(messageFile == null) {
             System.err.println("ABORT: Message file is null.");
             return null;
-        } else
-        if(getImageCapacity(imgInput) < messageFile.length()) {
-            System.err.println("ABORT: Message file is too large for image.");
-            return null;
         }
         
+        int capacity = getImageCapacity(imgInput);
+
         ImageBlock[][] imgBlocks = imageToBlocks(imgInput);
         FileInputStream stream = new FileInputStream(messageFile);
         int colorChannels = imgInput.getColorModel().getNumColorComponents();
@@ -196,11 +242,31 @@ public class BPCSTechnique implements StegoTechnique {
         byte[] plane = new byte[8];
         int readCount;
         
+        // generate metadata
+        ConjugationMap conjugationMap = new ConjugationMap(capacity / 8);
+        byte[] fileSizeBytes = getReservedBytesForFileSize(messageFile, capacity);
+        int numReservedBlocks = (int) (Math.ceil(conjugationMap.getSize() / 8.0)
+                + Math.ceil(fileSizeBytes.length / 8.0));
+        int mapIndex = 0;
+        
+        if(capacity - (numReservedBlocks * 8) < messageFile.length()) {
+            System.err.println("ABORT: Message file is too large for image.");
+            return null;
+        }
+        
+        // embed file data in image
         outermost_loop:
-        for(int x = 0; x < imgBlocks.length; x++) {
-            for(int y = 0; y < imgBlocks[0].length; y++) {
-                for(int c = 0; c < colorChannels; c++) {
-                    for(int bit = 0; bit < 8; bit++) {
+        for(int bit = 0; bit < 8; bit++) {
+            for(int x = 0; x < imgBlocks.length; x++) {
+                for(int y = 0; y < imgBlocks[0].length; y++) {
+                    for(int c = 0; c < colorChannels; c++) {
+                        // skip blocks reserved for metadata
+                        if(bit * imgBlocks.length * imgBlocks[0].length * colorChannels
+                                + x * imgBlocks[0].length * colorChannels
+                                + y * colorChannels + c < numReservedBlocks) {
+                            continue;
+                        }
+                        // check that bit plane passes complexity threshold
                         complexity = calculateComplexity(
                                 imgBlocks[x][y].getBitPlane(c, bit));
                         if(complexity >= COMPLEXITY_THRESHOLD) {
@@ -231,7 +297,25 @@ public class BPCSTechnique implements StegoTechnique {
 
     @Override
     public void extractFile(BufferedImage img, File outputFile) throws FileNotFoundException, IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ImageBlock[][] imgBlocks = imageToBlocks(img);
+        FileOutputStream stream = new FileOutputStream(outputFile);
+        int colorChannels = img.getColorModel().getNumColorComponents();
+        double complexity;
+        byte[] plane;
+        
+        for(int bit = 0; bit < 8; bit++) {
+            for(int x = 0; x < imgBlocks.length; x++) {
+                for(int y = 0; y < imgBlocks[0].length; y++) {
+                    for(int c = 0; c < colorChannels; c++) {
+                        plane = imgBlocks[x][y].getBitPlane(c, bit);
+                        complexity = calculateComplexity(plane);
+                        if(complexity >= COMPLEXITY_THRESHOLD) {
+                            stream.write(plane);
+                        }
+                    }
+                }
+            }
+        }
     }
     
 }
