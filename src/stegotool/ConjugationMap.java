@@ -26,14 +26,56 @@ public class ConjugationMap {
         
         // decompress map
         for(int i = 0; i < compressedMap.length; i++) {
-            for(int b = 7; b <= 7; b++) {
-                if(((compressedMap[i] >> b) & 1) == 1) {
-                    map[(i * 8) + b] = true;
+            for(int b = 7; b >= 0; b--) {
+                map[(i * 8) + (7 - b)] = (compressedMap[i] & (1 << b)) != 0;
+            }
+        }
+    }
+
+    /**
+     * Marks the plane at a specified index as conjugated.
+     * @param index Index of bit plane in list of eligible planes.
+     */
+    public void setPlaneAsConjugated(int index) {
+        map[index] = true;
+    }
+    
+    /**
+     * Returns whether a given plane is conjugated.
+     * @param index Index of bit plane in list of eligible planes.
+     * @return 
+     */
+    public boolean isPlaneConjugated(int index) {
+        return map[index];
+    }
+    
+    /**
+     * Compresses conjugation map into an array of bytes for embedding
+     * in vessel image.
+     * Each boolean value is represented by a bit in one of the bytes.
+     * @return Compressed conjugation map.
+     */
+    public byte[] getCompressedMap() {
+        byte[] compressedMap = new byte[(int) Math.ceil(map.length / 8.0)];
+        
+        for(int i = 0; i < compressedMap.length; i++) {
+            for(int b = 0; b < 8 && (i*8)+b < map.length; b++) {
+                if(map[(i*8)+b] == true) {
+                    compressedMap[i] = (byte) ((compressedMap[i] << 1) | 1);
                 } else {
-                    map[(i * 8) + b] = false;
+                    compressedMap[i] = (byte) (compressedMap[i] << 1);
                 }
             }
         }
+        return compressedMap;
+    }
+    
+    /**
+     * Gives the number of bytes needed to store the compressed map.
+     * @return Size of compressed conjugation map in bytes
+     */
+    public int getSize() {
+        return (int) Math.ceil(map.length / 8.0);
     }
     
 }
