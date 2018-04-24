@@ -29,7 +29,7 @@ public class GUI extends javax.swing.JFrame {
      */
     public GUI() {
         initComponents();
-        technique = new LSBTechnique();
+        technique = new LSBMultithreader(4);
     }
     
     /**
@@ -84,14 +84,15 @@ public class GUI extends javax.swing.JFrame {
         outputMessageTextField = new javax.swing.JTextField();
         outputMessageBrowseButton = new javax.swing.JButton();
         extractButton = new javax.swing.JButton();
-        jRadioButton1 = new javax.swing.JRadioButton();
-        jRadioButton2 = new javax.swing.JRadioButton();
+        BPCSRadioButton = new javax.swing.JRadioButton();
+        LSBRadioButton = new javax.swing.JRadioButton();
 
         vesselImageChooser.setFileFilter(new CompatibleImageFilter());
 
         outputImageChooser.setDialogType(javax.swing.JFileChooser.SAVE_DIALOG);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         vesselImageTextField.setEditable(false);
 
@@ -272,18 +273,22 @@ public class GUI extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("Extract", jPanel2);
 
-        techniqueButtons.add(jRadioButton1);
-        jRadioButton1.setText("BPCS");
-        jRadioButton1.setEnabled(false);
-        jRadioButton1.addActionListener(new java.awt.event.ActionListener() {
+        techniqueButtons.add(BPCSRadioButton);
+        BPCSRadioButton.setText("BPCS");
+        BPCSRadioButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButton1ActionPerformed(evt);
+                BPCSRadioButtonActionPerformed(evt);
             }
         });
 
-        techniqueButtons.add(jRadioButton2);
-        jRadioButton2.setSelected(true);
-        jRadioButton2.setText("LSB");
+        techniqueButtons.add(LSBRadioButton);
+        LSBRadioButton.setSelected(true);
+        LSBRadioButton.setText("LSB");
+        LSBRadioButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                LSBRadioButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -295,9 +300,9 @@ public class GUI extends javax.swing.JFrame {
                     .addComponent(jTabbedPane1)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jRadioButton2)
+                        .addComponent(LSBRadioButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jRadioButton1)))
+                        .addComponent(BPCSRadioButton)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -305,8 +310,8 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jRadioButton1)
-                    .addComponent(jRadioButton2))
+                    .addComponent(BPCSRadioButton)
+                    .addComponent(LSBRadioButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 341, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -315,9 +320,17 @@ public class GUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jRadioButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jRadioButton1ActionPerformed
+    private void BPCSRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BPCSRadioButtonActionPerformed
+        technique = new BPCSTechnique();
+        
+        // update capacity
+        if(vesselImage != null) {
+            int capacity = technique.getImageCapacity(vesselImage);
+            // account for BPCS metadata
+            capacity = (capacity * 63) / 64;
+            capacityLabel.setText("Capacity: " + formatCapacity(capacity));
+        }
+    }//GEN-LAST:event_BPCSRadioButtonActionPerformed
 
     private void vesseImageBrowseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vesseImageBrowseButtonActionPerformed
         int returnVal = vesselImageChooser.showOpenDialog(this);
@@ -432,6 +445,16 @@ public class GUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_extractImageBrowseButtonActionPerformed
 
+    private void LSBRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LSBRadioButtonActionPerformed
+        technique = new LSBTechnique();
+        
+        // update capacity
+        if(vesselImage != null) {
+            int capacity = technique.getImageCapacity(vesselImage);
+            capacityLabel.setText("Capacity: " + formatCapacity(capacity));
+        }
+    }//GEN-LAST:event_LSBRadioButtonActionPerformed
+
     
     /**
      * @param args the command line arguments
@@ -470,6 +493,8 @@ public class GUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JRadioButton BPCSRadioButton;
+    private javax.swing.JRadioButton LSBRadioButton;
     private javax.swing.JLabel capacityLabel;
     private javax.swing.JButton extractButton;
     private javax.swing.JButton extractImageBrowseButton;
@@ -482,8 +507,6 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JRadioButton jRadioButton1;
-    private javax.swing.JRadioButton jRadioButton2;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton messageDataBrowseButton;
     private javax.swing.JTextField messageDataTextField;
