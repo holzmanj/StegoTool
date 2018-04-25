@@ -109,6 +109,34 @@ public class LSBTechnique implements StegoTechnique {
         return imgOutput;
     }
     
+    /**
+     * Extracts data in a way that is compatible with single threaded
+     * and multithreaded schemas (does not reserve bytes for metadata).
+     * @param vesselImage Vessel image from which to extract data
+     * @param bitStream Initialized output stream
+     * @throws IOException 
+     */
+    public void extractRawData(BufferedImage vesselImage,
+            OutputFileBitStream bitStream) throws IOException {
+        Color pixel;
+        for(int x = 0; x < vesselImage.getWidth(); x++) {
+            for(int y = 0; y < vesselImage.getHeight(); y++) {
+                // get pixel values from image
+                pixel = new Color(vesselImage.getRGB(x, y));
+                
+                // get least significant bits and write them to file
+                bitStream.write(pixel.getRed()   & mask);
+                bitStream.write(pixel.getGreen() & mask);
+                bitStream.write(pixel.getBlue()  & mask);
+                
+                if(bitStream.isDoneWriting()) {
+                    bitStream.closeFile();
+                    return;
+                }
+            }
+        }
+    }
+    
     @Override
     public int getImageCapacity(BufferedImage img) {
         int colorChannels = img.getRaster().getNumDataElements();
@@ -153,23 +181,8 @@ public class LSBTechnique implements StegoTechnique {
         // reserve bytes for file size
         bitStream.reserveBytes(getNumBytesForCapacity(vesselImage));
         
-        Color pixel;
-        for(int x = 0; x < vesselImage.getWidth(); x++) {
-            for(int y = 0; y < vesselImage.getHeight(); y++) {
-                // get pixel values from image
-                pixel = new Color(vesselImage.getRGB(x, y));
-                
-                // get least significant bits and write them to file
-                bitStream.write(pixel.getRed()   & mask);
-                bitStream.write(pixel.getGreen() & mask);
-                bitStream.write(pixel.getBlue()  & mask);
-                
-                if(bitStream.isDoneWriting()) {
-                    bitStream.closeFile();
-                    return;
-                }
-            }
-        }
+        extractRawData(vesselImage, bitStream);
+
         bitStream.closeFile();
     }
     
