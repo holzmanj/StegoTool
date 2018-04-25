@@ -29,7 +29,7 @@ public class GUI extends javax.swing.JFrame {
      */
     public GUI() {
         initComponents();
-        technique = new LSBMultithreader(4);
+        technique = new LSBTechnique();
     }
     
     /**
@@ -526,12 +526,13 @@ class CompatibleImageFilter extends javax.swing.filechooser.FileFilter {
     @Override
     public boolean accept(File f) {
         // Allow only directories, or files with ".png" extension
-        return f.isDirectory() || f.getAbsolutePath().endsWith(".png");
+        return f.isDirectory() || f.getAbsolutePath().toLowerCase().endsWith(".png")
+                || f.getAbsolutePath().toLowerCase().endsWith(".bmp");
     }
 
     @Override
     public String getDescription() {
-        return "Compatible images (*.png)";
+        return "Compatible images (*.png, *.bmp)";
     }
     
 }
