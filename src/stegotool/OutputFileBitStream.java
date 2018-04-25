@@ -18,7 +18,7 @@ public class OutputFileBitStream {
     private int bitsShifted;
     private int[] reservedBytes = {};
     private int reservedBytesWritten;
-    private int fileSize;
+    private int fileSize = Integer.MAX_VALUE;
     private int fileBytesWritten = 0;
     private boolean doneWriting;
     
@@ -97,6 +97,19 @@ public class OutputFileBitStream {
      */
     public boolean isDoneWriting() {
         return doneWriting;
+    }
+    
+    /**
+     * Returns the size of the file as indicated by the reserved bytes.
+     * If fileSize hasn't been extracted from reserved bytes returns -1;
+     * @return Size of file or -1 on failure.
+     */
+    public int getFileSize() {
+        if(fileSize == Integer.MAX_VALUE) {
+            return -1;
+        } else {
+            return fileSize;
+        }
     }
     
     /**
