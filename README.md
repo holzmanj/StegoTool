@@ -1,7 +1,9 @@
 
 # Image StegoTool
 This is a GUI based steganography tool for embedding data files within images.  Data can be embdedded using two different steganographic techniques:
+
 **Least Significant Bit (LSB)** reserves the two least significant bits of every pixel color byte in an image for the storage of hidden data.  These bits control very small fluctuations in a pixel's color and so changing their values typically produces changes in an image that are not easily perceptible. 
+
 **Bit-Plane Segmentation Complexity (BPCS)** decomposes an image into a set of small bit-plane segments and uses these to identify the visually complex areas of the image.  These areas can then be used to embed the hidden data.
 
 Depending on the contents of the image, one of these techniques may provide a greater storage capacity for embedding hidden data.
@@ -12,7 +14,7 @@ To compile via command line, go to the desired installation directory and enter:
     
     git clone https://github.com/holzmanj/StegoTool.git
     cd StegoTool/
-    ant -f build.xml
+    ant -f build.xml compile
 To run the compiled code enter:
 
     ant -f build.xml run
