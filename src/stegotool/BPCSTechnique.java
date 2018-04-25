@@ -12,13 +12,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  *
  * @author jesse
  */
 public class BPCSTechnique implements StegoTechnique {
-    private final double COMPLEXITY_THRESHOLD = 0.5;    // must be <= 0.5
+    private final double COMPLEXITY_THRESHOLD = 0.35;    // MUST BE <= 0.5
     
     public BPCSTechnique() {
     }
@@ -197,17 +198,23 @@ public class BPCSTechnique implements StegoTechnique {
     @Override
     public int getImageCapacity(BufferedImage img) {
         if(img == null) return 0;
-        
-        //BufferedImage cgcImg = PBCToCGC(img);
+
         ImageBlock[][] imgBlocks = imageToBlocks(img);
         int colorChannels = img.getColorModel().getNumColorComponents();
         int eligiblePlanes = 0;
         double complexity;
         
-        for(int x = 0; x < imgBlocks.length; x++) {
-            for(int y = 0; y < imgBlocks[0].length; y++) {
-                for(int c = 0; c < colorChannels; c++) {
-                    for(int bit = 0; bit < 8; bit++) {
+        // calculate number of reserved planes to skip
+        int checkedPlanes = 0;
+        int totalPlanes = imgBlocks.length * imgBlocks[0].length * colorChannels * 8;
+        int reservedPlanes = (int) (Math.ceil(getNumBytesForCapacity(totalPlanes) / 8.0)
+                + Math.ceil(totalPlanes / 64.0));
+        
+        for(int bit = 0; bit < 8; bit++) {
+            for(int x = 0; x < imgBlocks.length; x++) {
+                for(int y = 0; y < imgBlocks[0].length; y++) {
+                    for(int c = 0; c < colorChannels; c++) {
+                        if(checkedPlanes++ < reservedPlanes) continue;
                         // bit plane is eligible if its complexity meets threshold
                         complexity = calculateComplexity(
                                 imgBlocks[x][y].getBitPlane(c, bit));
@@ -243,37 +250,45 @@ public class BPCSTechnique implements StegoTechnique {
         int readCount;
         
         // generate metadata
+        /*
         ConjugationMap conjugationMap = new ConjugationMap(capacity / 8);
         byte[] fileSizeBytes = getReservedBytesForFileSize(messageFile, capacity);
         int numReservedBlocks = (int) (Math.ceil(conjugationMap.getSize() / 8.0)
                 + Math.ceil(fileSizeBytes.length / 8.0));
         int mapIndex = 0;
+        */
+        int totalPlanes = imgBlocks.length * imgBlocks[0].length * colorChannels * 8;
+        ConjugationMap conjugationMap = new ConjugationMap(totalPlanes);
+        byte[] fileSizeBytes = getReservedBytesForFileSize(messageFile, totalPlanes);
+        int numReservedPlanes = (int) (Math.ceil(conjugationMap.getSize() / 8.0)
+                + Math.ceil(fileSizeBytes.length / 8.0));
+        int mapIndex = 0;
+        int checkedPlanes = 0;
         
-        if(capacity - (numReservedBlocks * 8) < messageFile.length()) {
+        if(capacity < messageFile.length()) {
             System.err.println("ABORT: Message file is too large for image.");
             return null;
         }
         
-        // embed file data in image
+        // embed file data in complex planes of image
         outermost_loop:
         for(int bit = 0; bit < 8; bit++) {
             for(int x = 0; x < imgBlocks.length; x++) {
                 for(int y = 0; y < imgBlocks[0].length; y++) {
                     for(int c = 0; c < colorChannels; c++) {
                         // skip blocks reserved for metadata
-                        if(bit * imgBlocks.length * imgBlocks[0].length * colorChannels
-                                + x * imgBlocks[0].length * colorChannels
-                                + y * colorChannels + c < numReservedBlocks) {
-                            continue;
-                        }
+                        if(checkedPlanes++ < numReservedPlanes) continue;
                         // check that bit plane passes complexity threshold
                         complexity = calculateComplexity(
                                 imgBlocks[x][y].getBitPlane(c, bit));
                         if(complexity >= COMPLEXITY_THRESHOLD) {
                             readCount = stream.read(plane);
                             
-                            if(calculateComplexity(plane) < COMPLEXITY_THRESHOLD)
+                            // data planes which are not complex enough need to be conjugated
+                            if(calculateComplexity(plane) < COMPLEXITY_THRESHOLD) {
                                 plane = conjugatePlane(plane);
+                                conjugationMap.setPlaneAsConjugated(mapIndex);
+                            }
                             
                             switch (readCount) {
                                 case 8:     // full 8 bytes were read from file
@@ -286,11 +301,48 @@ public class BPCSTechnique implements StegoTechnique {
                                     break outermost_loop;
                             }
                         }
+                        mapIndex++;
                     }
                 }
             }
         }
         
+        byte[][] metaData = new byte[numReservedPlanes][8];
+        // convert file size bytes to data planes
+        // bytes are aligned to back of section
+        int i = fileSizeBytes.length - 1, j;
+        for(int blk = (int) Math.ceil(fileSizeBytes.length / 8.0) - 1; blk >= 0; blk--) {
+            for(int row = 7; row >= 0; row--) {
+                if(i >= 0)
+                    metaData[blk][row] = fileSizeBytes[i--];
+            }
+        }
+        // convert conjugation map to data planes
+        // bytes are aligned to front of section
+        byte[] compressedMap = conjugationMap.getCompressedMap();
+        i = 0;
+        for(int blk = (int) Math.ceil(fileSizeBytes.length / 8.0); blk < metaData.length; blk++) {
+            for(int row = 0; row < 8; row++) {
+                if(i < compressedMap.length)
+                    metaData[blk][row] = compressedMap[i++];
+            }
+        }
+        // embed metadata in reserved planes
+        i = 0;
+        metadata_loop:
+        for(int bit = 0; bit < 8; bit++) {
+            for(int x = 0; x < imgBlocks.length; x++) {
+                for(int y = 0; y < imgBlocks[0].length; y++) {
+                    for(int c = 0; c < colorChannels; c++) {
+                        plane = metaData[i++];
+                        
+                        imgBlocks[x][y].replaceBitPlane(c, bit, plane);
+                        
+                        if(i >= metaData.length) break metadata_loop;
+                    }
+                }
+            }
+        }
         blocksToImage(imgBlocks, imgInput);
         return imgInput;
     }
@@ -302,16 +354,74 @@ public class BPCSTechnique implements StegoTechnique {
         int colorChannels = img.getColorModel().getNumColorComponents();
         double complexity;
         byte[] plane;
+        ConjugationMap conjugationMap;
         
+        int totalPlanes = imgBlocks.length * imgBlocks[0].length * colorChannels * 8;
+        int reservedPlanes = (int) (Math.ceil(getNumBytesForCapacity(totalPlanes) / 8.0)
+                + Math.ceil(totalPlanes / 64.0));
+        byte[][] metadata = new byte[reservedPlanes][8];
+        int index = 0;
+        
+        // extract metadata
+        metadata_loop:
         for(int bit = 0; bit < 8; bit++) {
             for(int x = 0; x < imgBlocks.length; x++) {
                 for(int y = 0; y < imgBlocks[0].length; y++) {
                     for(int c = 0; c < colorChannels; c++) {
+                        if(index < reservedPlanes) {
+                            metadata[index] = imgBlocks[x][y].getBitPlane(c, bit);
+                            index++;
+                        } else {
+                            break metadata_loop;
+                        }
+                    }
+                }
+            }
+        }
+
+        // parse metadata
+        int fileSize = 0, fileSizePlanes;
+        byte[] compressedMap;
+        fileSizePlanes = (int) Math.ceil(getNumBytesForCapacity(totalPlanes) / 8.0);
+        compressedMap = new byte[(int) Math.ceil(totalPlanes / 64.0)];
+        index = 0;
+        parse_loop:
+        for(int blk = 0; blk < metadata.length; blk++) {
+            for(int i = 0; i < 8; i++) {
+                if(blk < fileSizePlanes) {   // file size section parsing
+                    fileSize = (fileSize << 8) | metadata[blk][i]; 
+                } else {                    // conjugation map section parsing
+                    compressedMap[index++] = metadata[blk][i];
+                    if(index >= compressedMap.length) break parse_loop;
+                }
+            }
+        }
+        conjugationMap = new ConjugationMap(compressedMap);
+
+        // extract message data
+        int checkedPlanes = 0, writtenBytes = 0;
+        extraction_loop:
+        for(int bit = 0; bit < 8; bit++) {
+            for(int x = 0; x < imgBlocks.length; x++) {
+                for(int y = 0; y < imgBlocks[0].length; y++) {
+                    for(int c = 0; c < colorChannels; c++) {
+                        // skip planes reserved for metadata
+                        if(checkedPlanes++ < reservedPlanes) continue;
+                        // extract data
                         plane = imgBlocks[x][y].getBitPlane(c, bit);
+
                         complexity = calculateComplexity(plane);
                         if(complexity >= COMPLEXITY_THRESHOLD) {
+                            if(conjugationMap.isPlaneConjugated(index))
+                                plane = conjugatePlane(plane);
+                            
                             stream.write(plane);
+                            writtenBytes += 8;
+                            if(writtenBytes >= fileSize) {
+                                break extraction_loop;
+                            }
                         }
+                        index++;
                     }
                 }
             }
