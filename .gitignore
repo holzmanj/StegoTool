@@ -1,2 +1,4 @@
 /build/
 /dist/
+/src/stegotool/TestMain.java
+/src/stegorool/LSBMultithreader.java
