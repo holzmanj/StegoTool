@@ -326,8 +326,6 @@ public class GUI extends javax.swing.JFrame {
         // update capacity
         if(vesselImage != null) {
             int capacity = technique.getImageCapacity(vesselImage);
-            // account for BPCS metadata
-            capacity = (capacity * 63) / 64;
             capacityLabel.setText("Capacity: " + formatCapacity(capacity));
         }
     }//GEN-LAST:event_BPCSRadioButtonActionPerformed
