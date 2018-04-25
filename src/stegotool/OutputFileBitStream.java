@@ -19,7 +19,7 @@ public class OutputFileBitStream {
     private int[] reservedBytes = {};
     private int reservedBytesWritten;
     private int fileSize;
-    private int fileBytesWritten;
+    private int fileBytesWritten = 0;
     private boolean doneWriting;
     
     public OutputFileBitStream(int bitsPerCluster, File file)
