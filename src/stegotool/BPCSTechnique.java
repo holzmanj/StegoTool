@@ -12,7 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  *
@@ -250,13 +249,6 @@ public class BPCSTechnique implements StegoTechnique {
         int readCount;
         
         // generate metadata
-        /*
-        ConjugationMap conjugationMap = new ConjugationMap(capacity / 8);
-        byte[] fileSizeBytes = getReservedBytesForFileSize(messageFile, capacity);
-        int numReservedBlocks = (int) (Math.ceil(conjugationMap.getSize() / 8.0)
-                + Math.ceil(fileSizeBytes.length / 8.0));
-        int mapIndex = 0;
-        */
         int totalPlanes = imgBlocks.length * imgBlocks[0].length * colorChannels * 8;
         ConjugationMap conjugationMap = new ConjugationMap(totalPlanes);
         byte[] fileSizeBytes = getReservedBytesForFileSize(messageFile, totalPlanes);
@@ -383,7 +375,7 @@ public class BPCSTechnique implements StegoTechnique {
         int fileSize = 0, fileSizePlanes;
         byte[] compressedMap;
         fileSizePlanes = (int) Math.ceil(getNumBytesForCapacity(totalPlanes) / 8.0);
-        compressedMap = new byte[(int) Math.ceil(totalPlanes / 64.0)];
+        compressedMap = new byte[(int) Math.ceil(totalPlanes / 8.0)];
         index = 0;
         parse_loop:
         for(int blk = 0; blk < metadata.length; blk++) {
@@ -400,6 +392,7 @@ public class BPCSTechnique implements StegoTechnique {
 
         // extract message data
         int checkedPlanes = 0, writtenBytes = 0;
+        index = 0;
         extraction_loop:
         for(int bit = 0; bit < 8; bit++) {
             for(int x = 0; x < imgBlocks.length; x++) {
@@ -407,16 +400,20 @@ public class BPCSTechnique implements StegoTechnique {
                     for(int c = 0; c < colorChannels; c++) {
                         // skip planes reserved for metadata
                         if(checkedPlanes++ < reservedPlanes) continue;
+                        
                         // extract data
                         plane = imgBlocks[x][y].getBitPlane(c, bit);
-
                         complexity = calculateComplexity(plane);
                         if(complexity >= COMPLEXITY_THRESHOLD) {
+                            // conjugate plane if necessary
                             if(conjugationMap.isPlaneConjugated(index))
                                 plane = conjugatePlane(plane);
                             
-                            stream.write(plane);
-                            writtenBytes += 8;
+                            // copy bytes from plane
+                            for(int i = 0; i < 8 && writtenBytes < fileSize; i++) {
+                                stream.write(plane[i]);
+                                writtenBytes++;
+                            }
                             if(writtenBytes >= fileSize) {
                                 break extraction_loop;
                             }
